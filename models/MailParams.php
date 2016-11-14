@@ -16,6 +16,15 @@ use yii\helpers\Json;
  */
 class MailParams extends BaseMailParams
 {
+    /** @inheritdoc */
+    public function __set($name, $value)
+    {
+        if ($name == 'rules_data' && is_array($value)) {
+            $value = Json::encode($value);
+        }
+        return parent::__set($name, $value);
+    }
+
     /**
      * @inheritdoc
      */
