@@ -18,9 +18,7 @@ class LinkButtonAssets extends AssetBundle
         JqueryAsset::class,
     ];
 
-    public $js = [
-        'js/js.js',
-    ];
+    public $js = [];
 
     public $css = [
         'css/css.css',

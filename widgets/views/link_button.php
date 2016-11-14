@@ -6,9 +6,20 @@
 use mirkhamidov\alert\Alert;
 use mirkhamidov\mail\assets\LinkButtonAssets;
 use yii\helpers\Html;
+use yii\web\View;
 use yii\widgets\ActiveForm;
 
 LinkButtonAssets::register($this);
+
+$this->registerJs('$(\'[data-toggle="popover"]\').popover({
+    html:true
+});', View::POS_READY);
+
+$this->registerJs('$(\'.mail-btn-form-submit\').on(\'click\', function (e) {
+    $(\'.mail-btn-form-submit\').attr(\'disabled\', true);
+    $(this).parents(\'form\').submit();
+    return true;
+});', View::POS_READY);
 
 ?>
 <div class="mail-button-form">
