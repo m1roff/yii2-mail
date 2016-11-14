@@ -62,9 +62,9 @@ class MailButtonFormWidget extends Widget
         }
 
         if (!$this->model) {
-            throw new \Exception(\Yii::t('app', 'Entry with alias "{alias}" not found'), [
+            throw new \Exception(\Yii::t('app', 'Entry with alias "{alias}" not found', [
                 'alias' => $this->mailId,
-            ]);
+            ]));
         }
 
         $this->model->recipient = $this->recipient;
@@ -77,7 +77,7 @@ class MailButtonFormWidget extends Widget
                 $this->getModule()->validateMoreParams($this->model, $_model->moreData);
 
                 if (!$this->model->hasErrors()) {
-                    $res = $this->getModule()->sendEmail($this->model, $_model->moreData);
+                    $res = $this->getModule()->send($this->model, $_model->moreData);
 
                     if ($res) {
                         \Yii::$app->session->setFlash('success', \Yii::t('app', 'Message sent successfully.'));

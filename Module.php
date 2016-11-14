@@ -31,6 +31,11 @@ class Module extends \yii\base\Module
     public $sender;
 
     /**
+     * @var null|array
+     */
+    private $_sendMailErrors = [];
+
+    /**
      * @inheritdoc
      */
     public function init()
@@ -127,11 +132,63 @@ class Module extends \yii\base\Module
 
 
     /**
+     * @param $mailAlias
+     * @param $recipient
+     * @param array $moreData
+     * @return bool
+     * @throws \Exception
+     */
+    public function sendMail($mailAlias, $recipient, array $moreData = [])
+    {
+        $model = Mail::findOne(['alias' => $mailAlias]);
+        if (!$model) {
+            throw new \Exception(\Yii::t('app', 'Entry with alias "{alias}" not found', [
+                'alias' => $mailAlias,
+            ]));
+        }
+
+        $model->recipient = $recipient;
+
+        $this->validateMoreParams($model, $moreData);
+
+        if (!$model->hasErrors()) {
+            $res = $this->send($model, $moreData);
+            if ($res) {
+                return true;
+            } else {
+                $this->addSendMailErrors('Send mail error');
+            }
+        } else {
+            $this->addSendMailErrors($model->getErrors());
+        }
+        return false;
+    }
+
+    public function hasSendMailErrors()
+    {
+        return !empty($this->_sendMailErrors);
+    }
+
+    public function addSendMailErrors($value)
+    {
+        if (!is_array($value)) {
+            $value = [$value];
+        }
+        $this->_sendMailErrors = ArrayHelper::merge($this->_sendMailErrors, $value);
+    }
+
+    public function getSendMailErrors()
+    {
+        return $this->_sendMailErrors;
+    }
+
+
+    /**
      * Send email
      * @param Mail $model
      * @param array $moreData
      */
-    public function sendEmail(Mail &$model, array $moreData = [])
+    public function send(Mail &$model, array $moreData = [])
     {
         $res = \Yii::$app->mailer->compose(
             ['html' => $model->content_html, 'text' => $model->content_text],
@@ -146,6 +203,11 @@ class Module extends \yii\base\Module
         return $res;
     }
 
+    /**
+     * @param Mail $model
+     * @param $resultOfMailer
+     * @param array $moreData
+     */
     public function logMail(Mail $model, $resultOfMailer, array $moreData = [])
     {
         /** @var \yii\web\View $view */

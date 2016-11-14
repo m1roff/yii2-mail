@@ -44,5 +44,15 @@ class MMail
         return self::module()->linkButton($mailId, $recipient, $moreData, $params);
     }
 
+    public static function sendMail($mailId, $recipient, array $moreData = [])
+    {
+        return self::module()->sendMail($mailId, $recipient, $moreData);
+    }
+
+    public static function getSendMailErrors()
+    {
+        return self::module()->getSendMailErrors();
+    }
+
 
 }
