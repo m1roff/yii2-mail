@@ -7,7 +7,14 @@ use Yii;
 use yii\behaviors\TimestampBehavior;
 use yii\db\Expression;
 use yii\helpers\ArrayHelper;
+use yii\helpers\Json;
 
+/**
+ * Class Mail
+ * @package mirkhamidov\mail\models
+ *
+ * @property array $config
+ */
 class Mail extends BaseMail
 {
     public $moreData = [];
@@ -35,8 +42,21 @@ class Mail extends BaseMail
     public function rules()
     {
         return ArrayHelper::merge(parent::rules(), [
-            [['moreData', 'setid'], 'safe'],
+            [['moreData', 'setid', 'config'], 'safe'],
         ]);
+    }
+
+    public function setConfig($value)
+    {
+        $this->config_data = Json::encode(ArrayHelper::merge($this->getConfig(), $value));
+    }
+
+    public function getConfig()
+    {
+        if (!empty($this->config_data)) {
+            return Json::decode($this->config_data);
+        }
+        return [];
     }
 
     public function mailParamsDefault()

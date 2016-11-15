@@ -16,6 +16,7 @@ use Yii;
  * @property string $content_html
  * @property string $created_at
  * @property string $updated_at
+ * @property string $config_data
  *
  * @property MailLog[] $mailLogs
  * @property MailParams[] $mailParams
@@ -39,6 +40,7 @@ class Mail extends \yii\db\ActiveRecord
             [['is_active'], 'integer'],
             [['name', 'subject', 'content_text', 'content_html'], 'required'],
             [['created_at', 'updated_at'], 'safe'],
+            [['config_data'], 'string'],
             [['alias', 'name', 'subject', 'content_text', 'content_html'], 'string', 'max' => 255],
             [['alias'], 'unique'],
         ];
@@ -59,6 +61,7 @@ class Mail extends \yii\db\ActiveRecord
             'content_html' => Yii::t('backend', 'Alias for html message representation'),
             'created_at' => Yii::t('backend', 'Created At'),
             'updated_at' => Yii::t('backend', 'Updated At'),
+            'config_data' => Yii::t('backend', 'in Json'),
         ];
     }
 

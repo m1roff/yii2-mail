@@ -17,6 +17,7 @@ use mirkhamidov\mail\widgets\MailButtonFormWidget;
 use yii\base\DynamicModel;
 use yii\base\Exception;
 use yii\helpers\ArrayHelper;
+use yii\i18n\MessageFormatter;
 
 class Module extends \yii\base\Module
 {
@@ -138,7 +139,7 @@ class Module extends \yii\base\Module
      * @return bool
      * @throws \Exception
      */
-    public function sendMail($mailAlias, $recipient, array $moreData = [])
+    public function sendMail($mailAlias, $recipient, array $moreData = [], array $params = [])
     {
         $model = Mail::findOne(['alias' => $mailAlias]);
         if (!$model) {
@@ -152,7 +153,7 @@ class Module extends \yii\base\Module
         $this->validateMoreParams($model, $moreData);
 
         if (!$model->hasErrors()) {
-            $res = $this->send($model, $moreData);
+            $res = $this->send($model, $moreData, $params);
             if ($res) {
                 return true;
             } else {
@@ -182,24 +183,63 @@ class Module extends \yii\base\Module
         return $this->_sendMailErrors;
     }
 
+    /**
+     * @var null|MessageFormatter
+     */
+    private $_messageFormatter = null;
+
+    /**
+     * @return MessageFormatter
+     */
+    public function getMessageFormatter()
+    {
+        if ($this->_messageFormatter === null) {
+            $this->_messageFormatter = new MessageFormatter();
+        }
+        return $this->_messageFormatter;
+    }
+
+    /**
+     * Formats a message via [ICU message format](http://userguide.icu-project.org/formatparse/messages)
+     *
+     * @param string $message The pattern string to insert parameters into.
+     * @param array $params The array of name value pairs to insert into the format string.
+     * @return false|string
+     */
+    public function format($message, array $params = [])
+    {
+        return $this->getMessageFormatter()->format($message, $params, \Yii::$app->language);
+    }
+
 
     /**
      * Send email
      * @param Mail $model
      * @param array $moreData
      */
-    public function send(Mail &$model, array $moreData = [])
+    public function send(Mail &$model, array $moreData = [], array $params = [])
     {
+        $_subject = $model->subject . (YII_DEBUG ? ' ' . rand(9, 99999) : null);
+        if (!empty($model->config['subject']['replace'])
+            && !empty($params['subject'])
+        ) {
+            $_subject = ($this->format($_subject, $params['subject']));
+        }
+
         $res = \Yii::$app->mailer->compose(
             ['html' => $model->content_html, 'text' => $model->content_text],
             $moreData
         )
             ->setFrom($this->sender)
             ->setTo($model->recipient)
-            ->setSubject($model->subject . (YII_DEBUG ? ' ' . rand(9, 99999) : null))
+            ->setSubject($_subject)
             ->send();
 
-        $this->logMail($model, $res, $moreData);
+        $additionalData = [
+            'subject' => $_subject,
+            'moreData' => $moreData,
+        ];
+        $this->logMail($model, $res, $additionalData);
         return $res;
     }
 
@@ -208,17 +248,21 @@ class Module extends \yii\base\Module
      * @param $resultOfMailer
      * @param array $moreData
      */
-    public function logMail(Mail $model, $resultOfMailer, array $moreData = [])
+    public function logMail(Mail $model, $resultOfMailer, array $additionalData = [])
     {
+        $_moreData = [];
+        if (!empty($additionalData['moreData'])) {
+            $_moreData = $additionalData['moreData'];
+        }
         /** @var \yii\web\View $view */
         $view = \Yii::$app->getView();
         $modelLog = new MailLog();
         $modelLog->mail_id = $model->primaryKey;
         $modelLog->recipient = $model->recipient;
         $modelLog->setSender($this->sender);
-        $modelLog->composed_html = $view->render($model->content_html, $moreData);
-        $modelLog->composed_text = $view->render($model->content_text, $moreData);
-        $modelLog->data = ['moreData' => $moreData];
+        $modelLog->composed_html = $view->render($model->content_html, $_moreData);
+        $modelLog->composed_text = $view->render($model->content_text, $_moreData);
+        $modelLog->data = $additionalData;
 
         if ($resultOfMailer) {
             $modelLog->status = MailLog::STATUS_SUCCESS;
