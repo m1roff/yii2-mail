@@ -71,22 +71,7 @@ class MailButtonFormWidget extends Widget
 
         $this->getModule()->validateMoreParams($this->model, $this->moreData);
 
-        if (\Yii::$app->request->isPjax) {
-            $_model = new Mail();
-            if ($_model->load(\Yii::$app->request->post()) && $_model->setid == $this->model->primaryKey) {
-                $this->getModule()->validateMoreParams($this->model, $_model->moreData);
-
-                if (!$this->model->hasErrors()) {
-                    $res = $this->getModule()->send($this->model, $_model->moreData);
-
-                    if ($res) {
-                        \Yii::$app->session->setFlash('success', \Yii::t('app', 'Message sent successfully.'));
-                    } else {
-                        \Yii::$app->session->setFlash('error', \Yii::t('app', 'Error occurred while sending message.'));
-                    }
-                }
-            }
-        }
+        $this->trySendMail();
 
 
         // init submit button
@@ -114,7 +99,6 @@ class MailButtonFormWidget extends Widget
         // END init submit button
 
         // form options
-//        $this->formOptions['action'] = Url::to(['/mmail/mail/send', 'id' => $this->model->primaryKey]);
         if (empty($this->params['formOptions'])) {
             $this->params['formOptions'] = $this->formOptions;
         } else {
@@ -133,6 +117,26 @@ class MailButtonFormWidget extends Widget
             'moreData' => $this->moreData,
             'model' => $this->model,
         ]);
+    }
+
+    protected function trySendMail()
+    {
+        if (\Yii::$app->request->isPjax) {
+            $_model = new Mail();
+            if ($_model->load(\Yii::$app->request->post()) && $_model->setid == $this->model->primaryKey) {
+                $this->getModule()->validateMoreParams($this->model, $_model->moreData);
+
+                if (!$this->model->hasErrors()) {
+                    $res = $this->getModule()->send($this->model, $_model->moreData);
+
+                    if ($res) {
+                        \Yii::$app->session->setFlash('success', \Yii::t('app', 'Message sent successfully.'));
+                    } else {
+                        \Yii::$app->session->setFlash('error', \Yii::t('app', 'Error occurred while sending message.'));
+                    }
+                }
+            }
+        }
     }
 
 
