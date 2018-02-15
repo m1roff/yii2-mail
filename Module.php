@@ -10,12 +10,13 @@
 
 namespace mirkhamidov\mail;
 
-
+use Yii;
 use mirkhamidov\mail\models\Mail;
 use mirkhamidov\mail\models\MailLog;
 use mirkhamidov\mail\widgets\MailButtonFormWidget;
 use yii\base\DynamicModel;
 use yii\base\Exception;
+use yii\base\InvalidArgumentException;
 use yii\helpers\ArrayHelper;
 use yii\i18n\MessageFormatter;
 
@@ -136,6 +137,7 @@ class Module extends \yii\base\Module
      * @param $mailAlias
      * @param $recipient
      * @param array $moreData
+     * @param array $params
      * @return bool
      * @throws \Exception
      */
@@ -216,6 +218,8 @@ class Module extends \yii\base\Module
      * Send email
      * @param Mail $model
      * @param array $moreData
+     * @param array $params
+     * @return bool
      */
     public function send(Mail &$model, array $moreData = [], array $params = [])
     {
@@ -226,14 +230,30 @@ class Module extends \yii\base\Module
             $_subject = ($this->format($_subject, $params['subject']));
         }
 
-        $res = \Yii::$app->mailer->compose(
+        /** @var \yii\swiftmailer\Message $mailer */
+        $mailer = \Yii::$app->mailer->compose(
             ['html' => $model->content_html, 'text' => $model->content_text],
             $moreData
-        )
-            ->setFrom($this->sender)
-            ->setTo($model->recipient)
-            ->setSubject($_subject)
-            ->send();
+        );
+        $mailer->setFrom($this->sender);
+        $mailer->setTo($model->recipient);
+        $mailer->setSubject($_subject);
+
+        if (!empty($params['attach'])) {
+            foreach ($params['attach'] as $attachment) {
+                if (empty($attachment['file'])) {
+                    throw new InvalidArgumentException(Yii::t('app', 'Set "file" for attachment.'));
+                }
+                $_attachmentParams = [];
+                if (!empty($attachment['params'])) {
+                    $_attachmentParams = $attachment['params'];
+                }
+                $mailer->attach($attachment['file'], $_attachmentParams);
+            }
+        }
+
+
+        $res = $mailer->send();
 
         $additionalData = [
             'subject' => $_subject,
@@ -246,7 +266,7 @@ class Module extends \yii\base\Module
     /**
      * @param Mail $model
      * @param $resultOfMailer
-     * @param array $moreData
+     * @param array $additionalData
      */
     public function logMail(Mail $model, $resultOfMailer, array $additionalData = [])
     {

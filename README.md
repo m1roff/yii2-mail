@@ -24,12 +24,24 @@ to the require section of your `composer.json` file.
 
 
 
-
-TODO: mmail to config
-
-
-
-
 Usage
 -----
 
+## Send email with attachment
+
+```php
+$_mailRecipient = 'you@email.com';
+$_mailMoreData = [
+    'someParamInEmail' => 'will be replaced with this text',
+];
+$_mailParams['attach'] = [
+    [
+        'file' => $model->params['file']['fileFullPath'],
+        'params' => [
+            // for details look at http://www.yiiframework.com/doc-2.0/yii-mail-messageinterface.html#attach()-detail
+        ],
+    ],
+];
+
+MMail::sendMail($_mailAlias, $_mailRecipient, $_mailMoreData, $_mailParams);
+```
