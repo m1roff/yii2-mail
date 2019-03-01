@@ -238,6 +238,16 @@ class Module extends \yii\base\Module
         $mailer->setFrom($this->sender);
         $mailer->setTo($model->recipient);
         $mailer->setSubject($_subject);
+        
+        if (!empty($params['cc'])) {
+            $mailer->setCc($params['cc']);
+        }
+        if (!empty($params['bcc'])) {
+            $mailer->setBcc($params['bcc']);
+        }
+        if (!empty($params['replyTo'])) {
+            $mailer->setReplyTo($params['replyTo']);
+        }
 
         if (!empty($params['attach'])) {
             foreach ($params['attach'] as $attachment) {
